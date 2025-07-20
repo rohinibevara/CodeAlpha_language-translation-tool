@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Text Translator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 400px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    textarea, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #28a745;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Text Translator</h2>
+
+    <label>Enter Text:</label>
+    <textarea id="inputText" rows="4" placeholder="Type something..."></textarea>
+
+    <label>Source Language:</label>
+    <select id="sourceLang">
+      <option value="en">English</option>
+      <option value="fr">French</option>
+      <option value="es">Spanish</option>
+      <option value="hi">Hindi</option>
+      <option value="de">German</option>
+    </select>
+
+    <label>Target Language:</label>
+    <select id="targetLang">
+      <option value="fr">French</option>
+      <option value="en">English</option>
+      <option value="es">Spanish</option>
+      <option value="hi">Hindi</option>
+      <option value="de">German</option>
+    </select>
+
+    <button onclick="translateText()">Translate</button>
+
+    <div class="result" id="outputText"></div>
+  </div>
+
+  <script>
+    async function translateText() {
+      const input = document.getElementById("inputText").value.trim();
+      const source = document.getElementById("sourceLang").value;
+      const target = document.getElementById("targetLang").value;
+      const outputDiv = document.getElementById("outputText");
+
+      if (!input) {
+        outputDiv.innerText = "⚠️ Please enter some text.";
+        return;
+      }
+
+      outputDiv.innerText = "⏳ Translating...";
+
+      try {
+        const response = await fetch("https://libretranslate.de/translate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            q: input,
+            source: source,
+            target: target,
+            format: "text"
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.translatedText) {
+          outputDiv.innerText = `✅ Translation: ${data.translatedText}`;
+        } else {
+          outputDiv.innerText = "❌ Error: Could not translate.";
+        }
+      } catch (error) {
+        outputDiv.innerText = "❌ Network Error. Please try again.";
+      }
+    }
+  </script>
+</body>
+</html>
