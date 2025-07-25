@@ -1,0 +1,38 @@
+import os
+import uuid
+import requests
+import json
+
+# Read the Azure Translator configuration from environment
+key = os.getenv("TRANSLATOR_KEY")
+region = os.getenv("TRANSLATOR_REGION")
+endpoint = os.getenv("TRANSLATOR_ENDPOINT")
+
+if not key or not endpoint:
+    raise RuntimeError("Environment variables TRANSLATOR_KEY and TRANSLATOR_ENDPOINT must be set.")
+
+# REST API path
+path = "/translate"
+constructed_url = endpoint.rstrip("/") + path
+
+params = {
+    "api-version": "3.0",
+    "from": None,       # e.g. 'en' or None for auto-detect
+    "to": ["hi"]        # list of target language codes
+}
+
+headers = {
+    "Ocp-Apim-Subscription-Key": key,
+    "Ocp-Apim-Subscription-Region": region,  # required if your resource is regional
+    "Content-Type": "application/json",
+    "X-ClientTraceId": str(uuid.uuid4())
+}
+
+body = [{"text": "Hello, how are you?"}]
+
+response = requests.post(constructed_url, params=params, headers=headers, json=body)
+response.raise_for_status()
+
+result = response.json()
+translation = result[0]["translations"][0]["text"]
+print("Translated text:", translation)
