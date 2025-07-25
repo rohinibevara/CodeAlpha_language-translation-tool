@@ -1,0 +1,46 @@
+import os
+import tkinter as tk
+from tkinter import ttk, messagebox
+from azure.ai.translation.text import TextTranslationClient
+from azure.core.credentials import AzureKeyCredential
+
+LANGUAGES = {
+    'Auto‑detect': None,
+    'English': 'en',
+    'Hindi': 'hi',
+    'Spanish': 'es',
+    'French': 'fr',
+}
+
+class TranslatorApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Translator UI")
+        self.geometry("600x400")
+        self.setup_ui()
+        key = os.getenv("TRANSLATOR_KEY")
+        endpoint = os.getenv("TRANSLATOR_ENDPOINT")
+        region = os.getenv("TRANSLATOR_REGION")
+        if not key or not endpoint:
+            messagebox.showerror("Configuration error",
+                                 "Please set TRANSLATOR_KEY, REGION, ENDPOINT environment variables.")
+            self.destroy()
+            return
+        cred = AzureKeyCredential(key)
+        self.client = TextTranslationClient(endpoint=endpoint, credential=cred, region=region)
+
+    def setup_ui(self):
+        tk.Label(self, text="Enter text:").pack(anchor="w", padx=10, pady=(10, 0))
+        self.input_text = tk.Text(self, height=5)
+        self.input_text.pack(fill="x", padx=10)
+
+        frame = tk.Frame(self)
+        frame.pack(pady=5, fill="x", padx=10)
+        tk.Label(frame, text="From:").grid(row=0, column=0, sticky="w")
+        self.src = ttk.Combobox(frame, values=list(LANGUAGES.keys()), state="readonly")
+        self.src.grid(row=0, column=1, padx=5)
+        self.src.set('Auto‑detect')
+
+        tk.Label(frame, text="To:").grid(row=0, column=2, sticky="w")
+        tgt_vals = list(LANGUAGES.keys())[1:]
+        self.tgt = ttk
