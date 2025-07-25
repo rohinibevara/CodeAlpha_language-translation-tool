@@ -1,0 +1,67 @@
+import os
+import tkinter as tk
+from tkinter import ttk, messagebox
+from azure.ai.translation.text import TextTranslationClient
+from azure.core.credentials import AzureKeyCredential
+
+LANGUAGES = {
+    'Auto‑detect': None,
+    'English': 'en', 'Hindi': 'hi',
+    'Spanish': 'es', 'French': 'fr'
+}
+
+class TranslatorApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Translator UI with Azure API")
+        self.geometry("600x400")
+        self.setup_ui()
+        key = os.getenv("TRANSLATOR_TEXT_SUBSCRIPTION_KEY")
+        endpoint = os.getenv("TRANSLATOR_TEXT_ENDPOINT")
+        region = os.getenv("TRANSLATOR_TEXT_REGION")
+        if not key or not endpoint:
+            messagebox.showerror("Configuration error",
+                                 "Set TRANSLATOR_TEXT_SUBSCRIPTION_KEY, REGION, ENDPOINT env vars!")
+            self.destroy()
+        else:
+            cred = AzureKeyCredential(key)
+            self.client = TextTranslationClient(endpoint, cred)
+
+    def setup_ui(self):
+        tk.Label(self, text="Enter text:").pack(anchor="w", padx=10, pady=(10,0))
+        self.input_text = tk.Text(self, height=5)
+        self.input_text.pack(fill="x", padx=10)
+        frame = tk.Frame(self); frame.pack(pady=5, fill="x", padx=10)
+        tk.Label(frame, text="From:").grid(row=0,col=0)
+        self.src = ttk.Combobox(frame, values=list(LANGUAGES.keys()), state="readonly"); self.src.grid(row=0,col=1)
+        self.src.set('Auto‑detect')
+        tk.Label(frame, text="To:").grid(row=0,col=2)
+        tgt_values = list(LANGUAGES.keys())[1:]
+        self.tgt = ttk.Combobox(frame, values=tgt_values, state="readonly"); self.tgt.grid(row=0,col=3)
+        self.tgt.set('English')
+        ttk.Button(frame, text="Translate", command=self.translate).grid(row=0,col=4, padx=10)
+        tk.Label(self, text="Translated:").pack(anchor="w", padx=10, pady=(10,0))
+        self.output = tk.Text(self, height=5, state="disabled"); self.output.pack(fill="x", padx=10)
+
+    def translate(self):
+        text = self.input_text.get("1.0", tk.END).strip()
+        if not text:
+            messagebox.showwarning("Input needed", "Please type some text to translate.")
+            return
+        src_code = LANGUAGES[self.src.get()]
+        tgt_code = LANGUAGES[self.tgt.get()]
+        request_body = [{"text": text}]
+        try:
+            response = self.client.translate(content=request_body,
+                                             from_parameter=src_code,
+                                             to=[tgt_code])
+            translation = response[0].translations[0].text
+            self.output.config(state="normal")
+            self.output.delete("1.0", tk.END)
+            self.output.insert(tk.END, translation)
+            self.output.config(state="disabled")
+        except Exception as e:
+            messagebox.showerror("Translation failed", str(e))
+
+if __name__ == "__main__":
+    TranslatorApp().mainloop()
